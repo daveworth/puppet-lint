@@ -192,3 +192,27 @@ PuppetLint.new_check(:ensure_not_symlink_target) do
     end
   end
 end
+
+# Public: Check the resource for lines in a definition not ending in a comma.
+PuppetLint.new_check(:missing_trailing_comma) do
+  def check
+    resource_indexes.each do |res_idx|
+      res_idx[:tokens].group_by { |token| token.line }.each do |line_number, line_tokens|
+        if line_tokens.select { |token| token.type == :FARROW }.count > 0
+          unless line_tokens.last.type == :COMMA
+            notify :error, {
+              :message => 'line should end in comma',
+              :line    => line_number,
+              :column  => line_tokens.last.column+line_tokens.last.value.length,
+              :token   => line_tokens.last
+            }
+          end
+        end
+      end
+    end
+  end
+
+  def fix(problem)
+    problem[:token].value << ','
+  end
+end
